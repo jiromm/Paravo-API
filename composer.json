@@ -1,0 +1,12 @@
+{
+  "name": "jiromm/paravo",
+  "description": "IoT API for Paravo Project",
+  "minimum-stability": "dev",
+  "license": "GPL v3",
+  "authors": [
+    {
+      "name": "Aram Baghdasaryan",
+      "email": "xquack@gmail.com"
+    }
+  ]
+}
