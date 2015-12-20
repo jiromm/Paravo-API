@@ -55,7 +55,7 @@ $app->get('/devices/{deviceId}', function (Request $request, Response $response)
       $request->getAttribute('deviceId')
     );
 
-    $deviceData['config'] = json_decode($deviceData['config'], true);
+    $deviceData['ports'] = json_decode($deviceData['ports'], true);
 
     $result = [
       'status' => 'success',
@@ -83,9 +83,9 @@ $app->put('/devices/{deviceId}', function (Request $request, Response $response)
           $request->getAttribute('deviceId')
         );
 
-        $config = json_decode($deviceData['config'], true);
-        $config['ports'][$data['port']]['status'] = $data['status'];
-        $deviceData['config'] = $config;
+        $config = json_decode($deviceData['ports'], true);
+        $config[$data['port']]['status'] = $data['status'];
+        $deviceData['ports'] = $config;
 
         $result = [
           'status' => 'success',
