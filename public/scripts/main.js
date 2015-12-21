@@ -9,9 +9,12 @@ $(function() {
 	$('.port').click(function (e) {
 		e.preventDefault();
 
+		var passiveImg = 'http://dummyimage.com/200x200/dbdbdb/888888.png&text=UPDATING';
 		var el = $(this).parent(),
 			portId = el.attr('data-port-id'),
 			status = el.attr('data-status');
+
+		$(this).find('img').attr('src', passiveImg);
 
 		$.ajax({
 			url: host,

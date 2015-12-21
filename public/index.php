@@ -6,6 +6,7 @@ use \Psr\Http\Message\ResponseInterface as Response;
 use App\Config;
 use App\Model\Device;
 use App\Adapter\Connection;
+use App\RabbitMQ\Client;
 use App\View\JsonModel;
 use App\View\ViewModel;
 
@@ -20,6 +21,7 @@ $container['renderer'] = new ViewModel("./templates");
 
 $config = new Config();
 $connection = new Connection();
+$rabbitMQ = new Client($config);
 $device = new Device($connection($config));
 
 $app->get('/', function (Request $request, Response $response) use ($app) {
@@ -68,7 +70,7 @@ $app->get('/devices/{deviceId}', function (Request $request, Response $response)
   return new JsonModel($result);
 });
 
-$app->put('/devices/{deviceId}', function (Request $request, Response $response) use ($device) {
+$app->put('/devices/{deviceId}', function (Request $request, Response $response) use ($device, $rabbitMQ) {
   $result = [
     'status' => 'error',
     'message' => 'Runtime Error',
@@ -95,6 +97,10 @@ $app->put('/devices/{deviceId}', function (Request $request, Response $response)
         $device->updateConfigById(
           $request->getAttribute('deviceId'),
           json_encode($ports)
+        );
+
+        $rabbitMQ->send(
+            json_encode($result)
         );
       } else {
         $result['message'] = 'Bad Request';
