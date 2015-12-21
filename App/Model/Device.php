@@ -26,17 +26,17 @@ class Device extends Model {
     return $stmt->fetchAll(\PDO::FETCH_ASSOC);
   }
 
-  public function updateConfigById($deviceId, $config) {
+  public function updateConfigById($deviceId, $ports) {
     $connection = $this->getConnection();
 
     $stmt = $connection->prepare("
       update {$this->getTable()} set
-        config = :config
+        ports = :ports
       where id = :id
     ");
     $stmt->execute([
       ':id' => $deviceId,
-      ':config' => $config,
+      ':ports' => $ports,
     ]);
   }
 }

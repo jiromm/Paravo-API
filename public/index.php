@@ -7,23 +7,23 @@ use App\Config;
 use App\Model\Device;
 use App\Adapter\Connection;
 use App\View\JsonModel;
+use App\View\ViewModel;
 
 require '../vendor/autoload.php';
 
 chdir(dirname(__DIR__));
 
 $app = new \Slim\App();
+$container = $app->getContainer();
+$container['renderer'] = new ViewModel("./templates");
+
+
 $config = new Config();
 $connection = new Connection();
 $device = new Device($connection($config));
 
 $app->get('/', function (Request $request, Response $response) use ($app) {
-  $result = [
-    'status' => 'success',
-    'message' => 'welcome',
-  ];
-
-  return new JsonModel($result);
+    return $this->renderer->render($response, "/layout.html");
 });
 
 $app->get('/devices', function (Request $request, Response $response) use ($app, $device) {
@@ -83,9 +83,9 @@ $app->put('/devices/{deviceId}', function (Request $request, Response $response)
           $request->getAttribute('deviceId')
         );
 
-        $config = json_decode($deviceData['ports'], true);
-        $config[$data['port']]['status'] = $data['status'];
-        $deviceData['ports'] = $config;
+        $ports = json_decode($deviceData['ports'], true);
+        $ports[$data['port']]['status'] = $data['status'];
+        $deviceData['ports'] = $ports;
 
         $result = [
           'status' => 'success',
@@ -94,7 +94,7 @@ $app->put('/devices/{deviceId}', function (Request $request, Response $response)
 
         $device->updateConfigById(
           $request->getAttribute('deviceId'),
-          json_encode($config)
+          json_encode($ports)
         );
       } else {
         $result['message'] = 'Bad Request';
