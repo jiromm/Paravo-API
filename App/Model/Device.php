@@ -6,37 +6,33 @@ use App\Library\Constant;
 use App\Model;
 
 class Device extends Model {
-  protected $table = Constant::DB_DEVICE;
+    protected $table = Constant::DB_DEVICE;
 
-  public function fetchById($deviceId) {
-    $connection = $this->getConnection();
+    public function fetchById($deviceId) {
+        $driver = $this->getDriver();
 
-    $stmt = $connection->prepare("select * from {$this->getTable()} where status = 1 and id = :id");
-    $stmt->execute([':id' => $deviceId]);
+        $result = \r\table("devices")->get($deviceId)->run($driver->conn);
 
-    return $stmt->fetch(\PDO::FETCH_ASSOC);
-  }
+        return $this->normalizeData($result);
+    }
 
-  public function fetchAll() {
-    $connection = $this->getConnection();
+    public function fetchAll() {
+        $driver = $this->getDriver();
 
-    $stmt = $connection->prepare("select * from {$this->getTable()} where status = 1");
-    $stmt->execute();
+        $result = \r\table("devices")->getAll('raspberry_pi_b_plus', [
+            'index' => 'name',
+        ])->run($driver->conn);
 
-    return $stmt->fetchAll(\PDO::FETCH_ASSOC);
-  }
+        return $this->normalizeData($result->toArray());
+    }
 
-  public function updateConfigById($deviceId, $ports) {
-    $connection = $this->getConnection();
+    public function updateByPortId($deviceId, $portId, $status) {
+        $driver = $this->getDriver();
 
-    $stmt = $connection->prepare("
-      update {$this->getTable()} set
-        ports = :ports
-      where id = :id
-    ");
-    $stmt->execute([
-      ':id' => $deviceId,
-      ':ports' => $ports,
-    ]);
-  }
+        \r\table("devices")->get($deviceId)->update([
+            'ports' => [
+                $portId => ['status' => $status],
+            ],
+        ])->run($driver->conn);
+    }
 }

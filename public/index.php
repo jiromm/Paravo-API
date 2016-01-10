@@ -5,8 +5,7 @@ use \Psr\Http\Message\ResponseInterface as Response;
 
 use App\Config;
 use App\Model\Device;
-use App\Adapter\Connection;
-use App\RabbitMQ\Client;
+use App\Adapter\RethinkDB;
 use App\View\JsonModel;
 use App\View\ViewModel;
 
@@ -20,99 +19,84 @@ $container['renderer'] = new ViewModel("./templates");
 
 
 $config = new Config();
-$connection = new Connection();
-$rabbitMQ = new Client($config);
-$device = new Device($connection($config));
+$driver = new RethinkDB();
+$device = new Device($driver);
 
 $app->get('/', function (Request $request, Response $response) use ($app) {
     return $this->renderer->render($response, "/layout.html");
 });
 
 $app->get('/devices', function (Request $request, Response $response) use ($app, $device) {
-  $result = [
-    'status' => 'error',
-    'message' => 'Runtime Error',
-  ];
-
-  try {
     $result = [
-      'status' => 'success',
-      'data' => $result = $device->fetchAll(),
+        'status' => 'error',
+        'message' => 'Runtime Error',
     ];
-  } catch (\Exception $ex) {
-    $result['message'] = $ex->getMessage();
-  }
 
-  return new JsonModel($result);
+    try {
+        $result = [
+            'status' => 'success',
+            'data' => $result = $device->fetchAll(),
+        ];
+    } catch (\Exception $ex) {
+        $result['message'] = $ex->getMessage();
+    }
+
+    return new JsonModel($result);
 });
 
 $app->get('/devices/{deviceId}', function (Request $request, Response $response) use ($device) {
-  $result = [
-    'status' => 'error',
-    'message' => 'Runtime Error',
-  ];
-
-  try {
-    $deviceData = $device->fetchById(
-      $request->getAttribute('deviceId')
-    );
-
-    $deviceData['ports'] = json_decode($deviceData['ports'], true);
-
     $result = [
-      'status' => 'success',
-      'data' => $deviceData,
+        'status' => 'error',
+        'message' => 'Runtime Error',
     ];
-  } catch (\Exception $ex) {
-    $result['message'] = $ex->getMessage();
-  }
 
-  return new JsonModel($result);
-});
-
-$app->put('/devices/{deviceId}', function (Request $request, Response $response) use ($device, $rabbitMQ) {
-  $result = [
-    'status' => 'error',
-    'message' => 'Runtime Error',
-  ];
-
-  try {
-    $data = $request->getParsedBody();
-
-    if (is_array($data)) {
-      if (isset($data['port']) && isset($data['status'])) {
+    try {
         $deviceData = $device->fetchById(
-          $request->getAttribute('deviceId')
+            $request->getAttribute('deviceId')
         );
-
-        $ports = json_decode($deviceData['ports'], true);
-        $ports[$data['port']]['status'] = $data['status'];
-        $deviceData['ports'] = $ports;
 
         $result = [
-          'status' => 'success',
-          'data' => $deviceData,
+            'status' => 'success',
+            'data' => $deviceData,
         ];
-
-        $device->updateConfigById(
-          $request->getAttribute('deviceId'),
-          json_encode($ports)
-        );
-
-        $rabbitMQ->send(
-            json_encode($result)
-        );
-      } else {
-        $result['message'] = 'Bad Request';
-      }
-    } else {
-      $result['message'] = 'Bad Request';
+    } catch (\Exception $ex) {
+        $result['message'] = $ex->getMessage();
     }
-  } catch (\Exception $ex) {
-    $result['message'] = $ex->getMessage();
-  }
 
-  return new JsonModel($result);
+    return new JsonModel($result);
+});
+
+$app->put('/devices/{deviceId}', function (Request $request, Response $response) use ($device) {
+    $result = [
+        'status' => 'error',
+        'message' => 'Runtime Error',
+    ];
+
+    try {
+        $data = $request->getParsedBody();
+
+        if (is_array($data)) {
+            if (isset($data['port']) && isset($data['status'])) {
+                $result = [
+                    'status' => 'success',
+                ];
+
+                $device->updateByPortId(
+                    $request->getAttribute('deviceId'),
+                    $data['port'],
+                    $data['status']
+                );
+            } else {
+                $result['message'] = 'Bad Request';
+            }
+        } else {
+            $result['message'] = 'Bad Request';
+        }
+    } catch (\Exception $ex) {
+        $result['message'] = $ex->getMessage();
+    }
+
+    return new JsonModel($result);
 });
 
 $app->run();

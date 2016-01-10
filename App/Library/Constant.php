@@ -3,5 +3,5 @@
 namespace App\Library;
 
 class Constant {
-  const DB_DEVICE = 'device';
+  const DB_DEVICE = 'devices';
 }

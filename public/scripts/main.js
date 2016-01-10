@@ -25,9 +25,13 @@ $(function() {
 			},
 			dataType: "json"
 		}).done(function(data) {
+			var renderData = {};
+			renderData[portId] = {
+				status: parseInt(status) ? 'inactive' : 'active'
+			};
+
 			if (data.status == 'success') {
-				console.log(data);
-				render(data.data.ports);
+				render(renderData);
 			}
 		}).fail(function(jqXHR, textStatus) {
 			console.log("Request failed: " + textStatus);
@@ -35,6 +39,8 @@ $(function() {
 	});
 
 	function render(ports) {
+		console.log(ports);
+
 		$.each(ports, function (key, val) {
 			var activeImg = 'http://dummyimage.com/200x200/dbdbdb/00cc00.png&text=X';
 			var inactiveImg = 'http://dummyimage.com/200x200/dbdbdb/cc0000.png&text=O';
